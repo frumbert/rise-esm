@@ -1,0 +1,11 @@
+{
+  "name": "frumbert-rise-esm",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./bridge.js",
+  "exports": {
+    "./bridge": "./bridge.js",
+    "./utils": "./utils.js",
+    "./api": "./api.js"
+  }
+}
