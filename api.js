@@ -28,7 +28,8 @@
  */
 
 // string packer, better compression than lz-string, lzw, https://github.com/KilledByAPixel/JSONCrush
-import * as JSONCrush from "https://esm.sh/jsoncrush";
+import JSONCrush from "https://esm.sh/jsoncrush";
+const { crush, uncrush } = JSONCrush;
 
 let api = null;
 let version = null;
@@ -132,7 +133,7 @@ function findInteractionIndexById(id) {
   try {
     const stored = getValue("cmi.comments");
     if (stored) {
-      const unpacked = JSONCrush.uncrush(stored); // JSON.parse(stored));
+      const unpacked = uncrush(stored); // JSON.parse(stored));
       map = JSON.parse(unpacked);
     }
   } catch (e) {
@@ -148,7 +149,7 @@ function findInteractionIndexById(id) {
 
   try {
     const json = JSON.stringify(map);
-    const compressedString = JSONCrush.crush(json);
+    const compressedString = crush(json);
     // const compressedString = JSON.stringify(compressed);
     setValue("cmi.comments", compressedString);
     commit();
