@@ -27,10 +27,6 @@
  * SOFTWARE.
  */
 
-// string packer, better compression than lz-string, lzw, https://github.com/KilledByAPixel/JSONCrush
-import JSONCrush from "https://esm.sh/jsoncrush";
-const { crush, uncrush } = JSONCrush;
-
 let api = null;
 let version = null;
 let initialized = false;
@@ -128,16 +124,15 @@ function findInteractionIndexById(id) {
     return count;
   }
 
-   // cmi.interactions.n.id is WO, store it in cmi.comments (compressed)
+   // cmi.interactions.n.id is WO, store it in cmi.comments
   let map = {}; // {"id-string-a" : number, "id-string-b" : number2 }
   try {
     const stored = getValue("cmi.comments");
     if (stored) {
-      const unpacked = uncrush(stored); // JSON.parse(stored));
-      map = JSON.parse(unpacked);
+      map = JSON.parse(stored);
     }
   } catch (e) {
-    console.warn("Failed to unpack or parse cmi.comments:", e);
+    console.warn("Failed to parse cmi.comments:", e);
   }
 
   if (id in map) { // {"id-string-a" : number }, if id-string-a exists, return number
@@ -149,12 +144,10 @@ function findInteractionIndexById(id) {
 
   try {
     const json = JSON.stringify(map);
-    const compressedString = crush(json);
-    // const compressedString = JSON.stringify(compressed);
-    setValue("cmi.comments", compressedString);
+    setValue("cmi.comments", json);
     commit();
   } catch (e) {
-    console.warn("Failed to store compressed comment map:", e);
+    console.warn("Failed to store comment map:", e);
   }
 
   return newIndex;
