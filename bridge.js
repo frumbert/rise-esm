@@ -190,7 +190,7 @@ function getLastResult() {
 
 async function calculateResult(type, result = "neutral", value, courseId, learnerId, interactionId, key) {
   let valueToSave = "";
-  console.info(type,result,value,courseId,learnerId,interactionId,key);
+  // console.info(type,result,value,courseId,learnerId,interactionId,key);
   switch (type) {
     case "true-false": // binary
       valueToSave = (['t','f','0','1'].indexOf(value[0])!==-1) ? value[0] : 'f';
@@ -367,7 +367,7 @@ async function loadInteraction(key = "") {
 /* private functions */
 function mainContent(value, asPlainText = false) {
   const match = value.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
-  const str = match && match[1] ? match[1].trim() : null;
+  const str = match && match[1] ? match[1].trim() : value;
   return asPlainText ? htmlToPlaintext(str) : str;
 }
 
