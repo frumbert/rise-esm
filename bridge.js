@@ -41,15 +41,19 @@ let lastResult = "neutral";
 function findRise(win = window) {
     let frameElement = win;
     let attempts = 0;
-    while (!riseWindow && attempts < 15) {
-        attempts++;
-        if (frameElement.hasOwnProperty("__courseDataReady")) {
-            riseWindow = frameElement;
-            return true;
-        } else if (frameElement.parent === frameElement) {
-            break;
+    try {
+        while (!riseWindow && attempts < 15) {
+            attempts++;
+            if (frameElement.hasOwnProperty("__courseDataReady")) {
+                riseWindow = frameElement;
+                return true;
+            } else if (frameElement.parent === frameElement) {
+                break;
+            }
+            frameElement = frameElement.parent;
         }
-        frameElement = frameElement.parent;
+    } catch (err) {
+        return false;
     }
     return false;
 }
