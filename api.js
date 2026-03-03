@@ -36,40 +36,42 @@ const maxDepth = 8;
 function findScorm2004API(win = window) {
     let frameElement = win;
     let attempts = 0;
+
     try {
-    while (!api && attempts < maxDepth) {
-        attempts++;
-        if (frameElement.API_1484_11) {
-            api = frameElement.API_1484_11;
-            return true;
-        } else if (frameElement.parent === frameElement) {
-            break;
+        while (attempts < maxDepth) {
+            if (frameElement.API_1484_11) {
+                api = frameElement.API_1484_11;
+                return true;
+            }
+            if (frameElement.parent === frameElement) break;
+            frameElement = frameElement.parent;
+            attempts++;
         }
-        frameElement = frameElement.parent;
-    }
     } catch (err) {
-      console.warn('Failed to find Scorm 2004 window', err);
+        console.warn('Failed to find Scorm 2004 window', err);
     }
+
     return false;
 }
 
 function findScorm12API(win = window) {
     let frameElement = win;
     let attempts = 0;
+
     try {
-    while (!api && attempts < maxDepth) {
-        attempts++;
-        if (frameElement.API) {
-            api = frameElement.API;
-            return true;
-        } else if (frameElement.parent === frameElement) {
-            break;
-        }
-        frameElement = frameElement.parent;
-    }
+      while (attempts < maxDepth) {
+          if (frameElement.API) {
+              api = frameElement.API;
+              return true;
+          }
+          if (frameElement.parent === frameElement) break;
+          frameElement = frameElement.parent;
+          attempts++;
+      }
     } catch (err) {
       console.warn('Failed to find Scorm 1.2 window', err);
     }
+
     return false;
 }
 
@@ -83,24 +85,55 @@ function initialize() {
         version = '1.2';
     } else {
         version = 'storage';
-        // console.info('No SCORM API found, using sessionStorage fallback');
-    }
-
-    if (version === 'storage') {
         initialized = true;
         return true;
     }
 
-    try {
-        const result = version === '2004' ? 
-            api.Initialize('') :
-            api.LMSInitialize('');
+    if (version === '2004') {
+
+        api.GetValue("cmi.learner_id");
+        var err = api.GetLastError();
+
+        if (err === "122") { // Not initialized
+            var result = api.Initialize("");
+
+            if (result !== "true") {
+                var initErr = api.GetLastError();
+                // 103 = Already initialized
+                if (initErr !== "103") {
+                    console.warn("SCORM 2004 init failed:", initErr);
+                    return false;
+                }
+            }
+        }
+
         initialized = true;
-        return result;
-    } catch (e) {
-        console.error('Failed to initialize SCORM API:', e);
-        return false;
+        return true;
     }
+
+    if (version === '1.2') {
+
+        api.LMSGetValue("cmi.core.student_id");
+        var err = api.LMSGetLastError();
+
+        if (err === "301") { // Not initialized
+            var result = api.LMSInitialize("");
+
+            if (result !== "true") {
+                var initErr = api.LMSGetLastError();
+                // 101 = Already initialized
+                if (initErr !== "101") {
+                    console.warn("SCORM 1.2 init failed:", initErr);
+                    return false;
+                }
+            }
+        }
+
+        initialized = true;
+        return true;
+    }
+
+    return false;
 }
 
 function findInteractionIndexById(id) {
@@ -110,7 +143,7 @@ function findInteractionIndexById(id) {
       for (let key of keys) {
           const match = key.match(/^cmi\.interactions\.(\d+)\.id$/);
           if (match && sessionStorage.getItem(key) === id) {
-              return parseInt(match[1]);
+              return parseInt(match[1], 10);
           }
       }
       return getInteractionCount(); // return next available index
@@ -178,9 +211,12 @@ function getInteractionCount() {
         return interactionKeys.length;
     }
 
-    return version === '2004' ?
-        parseInt(api.GetValue('cmi.interactions._count')) :
-        parseInt(api.LMSGetValue('cmi.interactions._count'));
+    const val = version === '2004'
+      ? api.GetValue('cmi.interactions._count')
+      : api.LMSGetValue('cmi.interactions._count');
+
+    return parseInt(val, 10) || 0;
+
 }
 
 function getValue(element) {
@@ -191,7 +227,7 @@ function getValue(element) {
         if (element === 'cmi.interactions._count') {
             return getInteractionCount().toString();
         }
-        
+
         // Handle other count elements
         const countMatch = element.match(/^(cmi\.[\w.]+)\._count$/);
         if (countMatch) {
@@ -255,6 +291,8 @@ function commit() {
 
 function terminate() {
     if (!initialized) return false;
+
+    initialized = false;
 
     if (version === 'storage') {
         return true;
